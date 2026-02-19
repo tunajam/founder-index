@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package founderindex.v1;
+
+option go_package = "github.com/tunajam/founder-index/backend/gen/founderindex/v1;founderindexv1";
+
+// FounderIndexService provides stock screening by network effects and founder leadership.
+service FounderIndexService {
+  // ListStocks returns stocks filtered by minimum scores.
+  rpc ListStocks(ListStocksRequest) returns (ListStocksResponse);
+  
+  // GetStock returns detailed info for a single stock.
+  rpc GetStock(GetStockRequest) returns (GetStockResponse);
+  
+  // GetBacktest returns backtest data for a given filter configuration.
+  rpc GetBacktest(GetBacktestRequest) returns (GetBacktestResponse);
+}
+
+message Stock {
+  string ticker = 1;
+  string name = 2;
+  string sector = 3;
+  int32 network_effects_score = 4; // 1-10
+  int32 founder_led_score = 5;     // 1-10
+  double current_price = 6;
+  double price_change_pct = 7;     // 24h change
+  string market_cap = 8;
+  string ai_rationale = 9;         // AI-generated explanation of scores
+}
+
+message ListStocksRequest {
+  int32 min_network_effects = 1; // minimum network effects score (1-10)
+  int32 min_founder_led = 2;     // minimum founder-led score (1-10)
+  string sector = 3;             // optional sector filter
+  int32 limit = 4;               // max results (0 = default 10 for free, unlimited for paid)
+  int32 offset = 5;
+  string sort_by = 6;            // "combined", "network_effects", "founder_led", "ticker"
+  bool ascending = 7;
+}
+
+message ListStocksResponse {
+  repeated Stock stocks = 1;
+  int32 total_count = 2;         // total matching (may be > len(stocks) for free tier)
+  bool is_truncated = 3;         // true if free tier limit applied
+}
+
+message GetStockRequest {
+  string ticker = 1;
+}
+
+message GetStockResponse {
+  Stock stock = 1;
+}
+
+message BacktestPoint {
+  string date = 1;       // YYYY-MM format
+  double portfolio = 2;  // cumulative return %
+  double sp500 = 3;      // cumulative return %
+}
+
+message GetBacktestRequest {
+  string period = 1;              // "1Y", "5Y", "10Y"
+  int32 min_network_effects = 2;  // filter used for portfolio construction
+  int32 min_founder_led = 3;
+}
+
+message GetBacktestResponse {
+  repeated BacktestPoint points = 1;
+  double portfolio_return = 2;    // final cumulative %
+  double sp500_return = 3;        // final cumulative %
+  double alpha = 4;               // outperformance %
+  string period = 5;
+}

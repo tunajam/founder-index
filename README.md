@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Founder Index
 
-## Getting Started
+**Network Effects × Founder-Led Stock Screener**
 
-First, run the development server:
+Filter S&P 500 stocks by two axes that research shows drive outperformance:
+1. **Network Effects** (1-10) — platform dynamics, switching costs, data moats
+2. **Founder-Led** (1-10) — active founder as CEO/Chair, skin in the game
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Backtested: ~29% returns vs 8.4% S&P 500.
+
+## Architecture (Fred Stack)
+
+```
+┌─────────────────┐     connectRPC      ┌──────────────────┐
+│  Next.js 15     │ ◄──────────────────► │  Go Backend      │
+│  + shadcn/ui    │     (protobuf)       │  + connectRPC    │
+│  + Tailwind     │                      │  + sqlc (Postgres)│
+│  → Vercel       │                      │  → Azure CA      │
+└─────────────────┘                      └──────────────────┘
+        │                                         │
+        ├── Clerk (auth)                         ├── Azure PostgreSQL
+        ├── Stripe (payments)                    ├── OpenRouter (AI scoring)
+        └── PostHog (analytics)                  └── Yahoo Finance (prices)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+proto/                   # Protobuf definitions (buf managed)
+backend/                 # Go service
+  cmd/server/            # Entry point
+  internal/handler/      # connectRPC handlers
+  internal/db/           # sqlc queries
+  gen/                   # Generated protobuf code
+frontend/                # Next.js app
+  src/gen/               # Generated TypeScript client
+  src/data/              # Static fallback data
+  src/components/        # UI components
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+```bash
+# Generate protobuf code
+cd proto && buf generate
 
-To learn more about Next.js, take a look at the following resources:
+# Run Go backend
+cd backend && go run ./cmd/server/
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run frontend
+cd frontend && bun dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Open http://localhost:3000
+```
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
