@@ -56,10 +56,14 @@ export default function AppClient() {
         fetch(`${API}/api/backtest?min_network=${minNetwork}&founder_only=${founderOnly}&years=${years}`),
         fetch(`${API}/api/quotes?min_network=${minNetwork}&founder_only=${founderOnly}`),
       ]);
+      if (!btRes.ok || !qRes.ok) {
+        console.error("API error:", btRes.status, qRes.status);
+        return;
+      }
       const btData = await btRes.json();
       const qData = await qRes.json();
       setBacktest(btData);
-      setQuotes(qData || []);
+      setQuotes(Array.isArray(qData) ? qData : []);
     } catch (e) {
       console.error("Failed to fetch:", e);
     }
@@ -126,7 +130,7 @@ export default function AppClient() {
             color="text-neutral-300" />
           <StatCard label="Portfolio CAGR" value={`${backtest.portfolio_cagr.toFixed(1)}%`} color="text-amber-400" />
           <StatCard label="Outperformance"
-            value={`+${outperformance.toFixed(1)}% CAGR`}
+            value={`${outperformance > 0 ? "+" : ""}${outperformance.toFixed(1)}% CAGR`}
             color={outperformance > 0 ? "text-green-400" : "text-red-400"}
             subtitle={`${backtest.stock_count} stocks`} />
         </div>
@@ -190,7 +194,7 @@ export default function AppClient() {
 
       <div className="mt-12 mb-6 text-center text-neutral-600 text-sm">
         <p>Data from Yahoo Finance • Adjusted close prices • Not financial advice</p>
-        <p className="mt-1">Built by <a href="https://tunajam.com" className="text-amber-500 hover:underline">Tunajam</a></p>
+        <p className="mt-1">Built by <a href="https://tunajam.com" target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:underline">Tunajam</a></p>
       </div>
     </main>
   );

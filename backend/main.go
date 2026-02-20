@@ -122,6 +122,7 @@ func corsWrap(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func handleStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	cacheMu.RLock()
 	count := len(priceCache)
 	cacheMu.RUnlock()
@@ -202,7 +203,7 @@ func handleBacktest(w http.ResponseWriter, r *http.Request) {
 	minNetwork, _ := strconv.Atoi(r.URL.Query().Get("min_network"))
 	founderOnly := r.URL.Query().Get("founder_only") == "true"
 	years, _ := strconv.Atoi(r.URL.Query().Get("years"))
-	if years == 0 {
+	if years <= 0 {
 		years = 10
 	}
 
@@ -366,11 +367,15 @@ func fetchAllPrices() {
 
 func fetchPricesForSymbol(symbol string) {
 	// Yahoo Finance v8 API
-	yahooSymbol := strings.ReplaceAll(symbol, "-", "-") // BRK-B stays BRK-B
+	yahooSymbol := strings.ReplaceAll(symbol, ".", "-") // BRK.B becomes BRK-B for Yahoo
 	url := fmt.Sprintf("https://query1.finance.yahoo.com/v8/finance/chart/%s?range=10y&interval=1mo", yahooSymbol)
 
 	client := &http.Client{Timeout: 15 * time.Second}
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("Failed to create request for %s: %v", symbol, err)
+		return
+	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")
 
 	resp, err := client.Do(req)
