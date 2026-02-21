@@ -1,6 +1,4 @@
-node_modules/
-.next/
-.env
-.env.*
-data/price_cache.json
-backend/founder-index-api
+node_modules
+.next
+.env.local
+.vercel
